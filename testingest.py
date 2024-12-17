@@ -23,7 +23,7 @@ cocktail_schema = StructType([
     StructField("GlassType", StringType(), True),
     StructField("Ingredients", ArrayType(ingredient_schema), True),
     StructField("Instructions", StringType(), True),
-    StructField("DateModified", StringType(), True)  # New audit column
+    StructField("DateModified", StringType(), True)  # audit column
 ])
 
 # Function to fetch data from the API
@@ -45,8 +45,12 @@ def map_to_schema(data):
         for i in range(1, 16):  # There are up to 15 ingredients
             ingredient = drink.get(f"strIngredient{i}")
             measurement = drink.get(f"strMeasure{i}")
-            if ingredient:
-                ingredients.append({"IngredientName": ingredient, "Measurement": measurement})
+            # Only add ingredient if the name exists (ignore completely missing ingredients)
+            if ingredient and ingredient.strip():  # Check if ingredient is non-empty
+                ingredients.append({
+                    "IngredientName": ingredient.strip(),
+                    "Measurement": measurement.strip() if measurement else "N/A"  # Handle missing measurements
+                })
         
         cocktails.append({
             "CocktailID": int(drink["idDrink"]),
@@ -56,7 +60,7 @@ def map_to_schema(data):
             "GlassType": drink.get("strGlass"),
             "Ingredients": ingredients,
             "Instructions": drink.get("strInstructions"),
-            "DateModified": drink.get("dateModified")  # New audit column mapping
+            "DateModified": drink.get("dateModified")  # get audit column mapping
         })
     return cocktails
 
